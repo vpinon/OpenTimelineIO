@@ -60,19 +60,12 @@ def possibly_install(rerun_cmake):
                 env=env
             )
 
-        if platform.system() == "Windows":
-            cmake_args, env = compute_cmake_args()
-            subprocess.check_call(
-                ['cmake', '--build', '.', '--target', 'install', '--config', 'Release'],
-                cwd=_ctx.build_temp_dir,
-                env=env
-            )
-
-        else:
-            subprocess.check_call(
-                ['make', 'install', '-j4'],
-                cwd=_ctx.build_temp_dir
-            )
+        cmake_args, env = compute_cmake_args()
+        subprocess.check_call(
+            ['cmake', '--build', '.', '--target', 'install', '--config', 'Release'],
+            cwd=_ctx.build_temp_dir,
+            env=env
+        )
 
 
 def compute_cmake_args():
@@ -99,12 +92,7 @@ def compute_cmake_args():
                            '-DOTIO_CXX_NOINSTALL:BOOL=ON']
 
     cfg = 'Debug' if _ctx.debug else 'Release'
-
-    if platform.system() == "Windows":
-        if sys.maxsize > 2**32:
-            cmake_args += ['-A', 'x64']
-    else:
-        cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
+    cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg, '-GMinGW Makefiles']
 
     if _ctx.cxx_coverage:
         cmake_args += ['-DCXX_COVERAGE=1'] + cmake_args
@@ -201,11 +189,6 @@ class CMakeBuild(setuptools.command.build_ext.build_ext):
 
         cfg = 'Debug' if _ctx.debug else 'Release'
         build_args = ['--config', cfg]
-
-        if platform.system() == "Windows":
-            build_args += ['--', '/m']
-        else:
-            build_args += ['--', '-j2']
 
         if not os.path.exists(_ctx.build_temp_dir):
             os.makedirs(_ctx.build_temp_dir)
